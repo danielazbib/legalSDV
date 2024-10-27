@@ -1,7 +1,8 @@
 import re
 import json
-from sentence_transformers import SentenceTransformer
-from sklearn.metrics.pairwise import cosine_similarity
+import pandas as pd
+from sdv.metadata import SingleTableMetadata
+from sdv.single_table import CTGANSynthesizer
 
 # Load JSON data
 def load_data(file):
@@ -42,14 +43,51 @@ def extract_private_keywords(data):
         keywords.append(case_keywords)
     return keywords
 
-# Replace keywords in descriptions
-def replace_keywords_with_placeholder(descriptions, keywords, placeholder="ABC Constituent"):
+
+# Generate synthetic company names with SDV
+def generate_synthetic_company_names(keywords):
+    # Flatten the keywords list to use for SDV
+    flattened_keywords = [kw for case_keywords in keywords for kw in case_keywords if kw]
+
+    # Prepare DataFrame for SDV
+    keywords_df = pd.DataFrame(flattened_keywords, columns=['company_name'])
+
+    # Define metadata and initialize SDV synthesizer
+    metadata = SingleTableMetadata()
+    metadata.detect_from_dataframe(keywords_df)
+    metadata.update_column('company_name', sdtype='text')
+
+    synthesizer = CTGANSynthesizer(metadata)
+    synthesizer.fit(keywords_df)
+
+    # Generate synthetic company names
+    synthetic_keywords_df = synthesizer.sample(num_rows=len(flattened_keywords))
+
+    # Reformat synthetic names into original array-of-arrays structure
+    synthetic_keywords = []
+    index = 0
+    for case_keywords in keywords:
+        case_synthetic_names = []
+        for _ in case_keywords:
+            if index < len(synthetic_keywords_df):
+                case_synthetic_names.append(synthetic_keywords_df.iloc[index]['company_name'])
+                index += 1
+        synthetic_keywords.append(case_synthetic_names)
+    
+    return synthetic_keywords
+
+# Replace each keyword in descriptions with the corresponding synthetic company name
+def replace_keywords_with_synthetic_names(descriptions, keywords, synthetic_names):
     modified_descriptions = []
     for i in range(len(descriptions)):
         description = descriptions[i]
         case_keywords = keywords[i]
-        for keyword in case_keywords:
-            description = description.replace(keyword, placeholder)
+        case_synthetic_names = synthetic_names[i]
+        
+        # Replace each keyword with the corresponding synthetic name
+        for original, synthetic in zip(case_keywords, case_synthetic_names):
+            description = re.sub(rf"\b{re.escape(original)}\b", synthetic, description)
+        
         modified_descriptions.append(description)
     return modified_descriptions
 
