@@ -1,3 +1,5 @@
+<img src="./frontend/src/assets/logo-transparent.png" />
+
 # SimpliSafe: Safe Summaries Made Simple
 
 ## Inspiration
