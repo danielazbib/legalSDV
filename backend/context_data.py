@@ -61,7 +61,7 @@ def replace_keywords_with_placeholder(descriptions, keywords, placeholder="ABC C
     return modified_descriptions
 
 def main():
-    data = load_data('data/CUADv1.json')
+    data = load_data('./data/CUADv1.json')
     original_descriptions = extract_original_descriptions(data)
     keywords = extract_private_keywords(data)
     modified_descriptions = replace_keywords_with_placeholder(original_descriptions, keywords)
