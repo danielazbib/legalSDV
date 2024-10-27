@@ -1,16 +1,21 @@
-# backend/app.py
 from flask import Flask, jsonify
 from flask_cors import CORS
+from context_data import process_data
 
 app = Flask(__name__)
 CORS(app)
 
+# Process data and prepare for API response
+titles, original_descriptions, modified_descriptions, similarity_scores, avg_similarity = process_data('./data/CUADv1.json')
+
 @app.route("/api/similarity")
 def get_similarity_data():
     data = {
-        "documents": ["Doc 1", "Doc 2", "Doc 3", "Doc 4", "Doc 5"],
-        "original_scores": [0.85, 0.78, 0.90, 0.88, 0.82],
-        "anonymized_scores": [0.80, 0.75, 0.88, 0.83, 0.81]
+        "documents": titles,
+        "original_descriptions": original_descriptions,
+        "modified_descriptions": modified_descriptions,
+        "similarity_scores": similarity_scores,
+        "avg_similarity": avg_similarity,
     }
     return jsonify(data)
 
